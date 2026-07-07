@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mmnuig.shoplistcc.ui.HomeScreen
 import com.mmnuig.shoplistcc.ui.PlanScreen
+import com.mmnuig.shoplistcc.ui.ShopScreen
 import com.mmnuig.shoplistcc.ui.theme.ShopListCCTheme
 
 enum class Screen { Home, Plan, Shop }
@@ -45,6 +46,6 @@ fun ShopListApp() {
             onExport = { /* wired in import/export milestone */ }
         )
         Screen.Plan -> PlanScreen(viewModel, onHome = { screen = Screen.Home })
-        Screen.Shop -> Text("Shop - coming soon")
+        Screen.Shop -> ShopScreen(viewModel, onHome = { screen = Screen.Home })
     }
 }
