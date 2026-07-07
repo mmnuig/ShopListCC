@@ -1,0 +1,305 @@
+package com.mmnuig.shoplistcc.ui
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.dp
+import com.mmnuig.shoplistcc.ShopViewModel
+import com.mmnuig.shoplistcc.data.Category
+import com.mmnuig.shoplistcc.data.Item
+import com.mmnuig.shoplistcc.ui.theme.FlagBlue
+import com.mmnuig.shoplistcc.ui.theme.UnplannedBg
+import com.mmnuig.shoplistcc.ui.theme.UnplannedBorder
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+fun formatPlanDate(iso: String?): String? = try {
+    iso?.let { LocalDate.parse(it).format(DateTimeFormatter.ofPattern("d MMM")) }
+} catch (e: Exception) {
+    null
+}
+
+@Composable
+fun PlanScreen(viewModel: ShopViewModel, onHome: () -> Unit) {
+    val categories by viewModel.categories.collectAsState()
+    val items by viewModel.items.collectAsState()
+    val planDate by viewModel.planDate.collectAsState()
+
+    val title = formatPlanDate(planDate)?.let { "Plan: $it" } ?: "Plan"
+
+    Scaffold(topBar = { GreenTopBar(title, onHome) }) { innerPadding ->
+        WrapAroundPager(
+            pageCount = categories.size + 1,
+            modifier = Modifier.padding(innerPadding)
+        ) { page ->
+            if (page == 0) {
+                PlanCategoriesPage(viewModel, categories, items)
+            } else {
+                PlanCategoryPage(
+                    viewModel,
+                    categories[page - 1],
+                    items.filter { it.categoryId == categories[page - 1].id }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlanCategoriesPage(
+    viewModel: ShopViewModel,
+    categories: List<Category>,
+    items: List<Item>
+) {
+    var showClearAll by remember { mutableStateOf(false) }
+    var renameTarget by remember { mutableStateOf<Category?>(null) }
+    var deleteTarget by remember { mutableStateOf<Category?>(null) }
+
+    var localCategories by remember(categories) { mutableStateOf(categories) }
+    val lazyListState = rememberLazyListState()
+    val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
+        val fromIdx = localCategories.indexOfFirst { it.id == from.key }
+        val toIdx = localCategories.indexOfFirst { it.id == to.key }
+        if (fromIdx != -1 && toIdx != -1) {
+            localCategories = localCategories.toMutableList()
+                .apply { add(toIdx, removeAt(fromIdx)) }
+        }
+    }
+
+    LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize()) {
+        item(key = "header") {
+            Column {
+                Text(
+                    "Categories",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+                )
+                Button(
+                    onClick = { showClearAll = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text("CLEAR ALL")
+                }
+                AddField(onAdd = { viewModel.addCategory(it, atEnd = false) })
+            }
+        }
+        items(localCategories, key = { it.id }) { category ->
+            ReorderableItem(reorderableState, key = category.id) {
+                val catItems = items.filter { it.categoryId == category.id }
+                val allCrossed = catItems.isNotEmpty() && catItems.all { it.crossed }
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = allCrossed,
+                            onCheckedChange = { viewModel.setCategoryCrossed(category.id, it) }
+                        )
+                        Text(
+                            category.name,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { renameTarget = category }) {
+                            Icon(Icons.Filled.Edit, "Rename", tint = FlagBlue)
+                        }
+                        IconButton(onClick = { deleteTarget = category }) {
+                            Icon(Icons.Filled.Delete, "Delete", tint = FlagBlue)
+                        }
+                        IconButton(
+                            onClick = {},
+                            modifier = Modifier.draggableHandle(
+                                onDragStopped = { viewModel.reorderCategories(localCategories) }
+                            )
+                        ) {
+                            Icon(Icons.Filled.DragHandle, "Reorder", tint = FlagBlue)
+                        }
+                    }
+                }
+            }
+        }
+        item(key = "footer") {
+            AddField(onAdd = { viewModel.addCategory(it, atEnd = true) })
+        }
+    }
+
+    if (showClearAll) {
+        ClearAllDialog(
+            onCrossAll = { viewModel.setAllCrossed(true) },
+            onUncrossAll = { viewModel.setAllCrossed(false) },
+            onDismiss = { showClearAll = false }
+        )
+    }
+    renameTarget?.let { target ->
+        RenameDialog(
+            title = "Rename category",
+            initial = target.name,
+            onConfirm = { viewModel.renameCategory(target, it) },
+            onDismiss = { renameTarget = null }
+        )
+    }
+    deleteTarget?.let { target ->
+        ConfirmDialog(
+            title = "Delete category",
+            message = "Delete \"${target.name}\" and all its items?",
+            confirmLabel = "Delete",
+            onConfirm = { viewModel.deleteCategory(target) },
+            onDismiss = { deleteTarget = null }
+        )
+    }
+}
+
+@Composable
+private fun ClearAllDialog(
+    onCrossAll: () -> Unit,
+    onUncrossAll: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Start a new plan") },
+        text = { Text("This stamps today's date on the plan. Bought ticks and flags are kept.") },
+        confirmButton = {
+            Column {
+                TextButton(onClick = { onCrossAll(); onDismiss() }) {
+                    Text("Cross off all items")
+                }
+                TextButton(onClick = { onUncrossAll(); onDismiss() }) {
+                    Text("Uncross all items")
+                }
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
+        }
+    )
+}
+
+@Composable
+private fun PlanCategoryPage(
+    viewModel: ShopViewModel,
+    category: Category,
+    items: List<Item>
+) {
+    var renameTarget by remember { mutableStateOf<Item?>(null) }
+
+    var localItems by remember(items) { mutableStateOf(items) }
+    val lazyListState = rememberLazyListState()
+    val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
+        val fromIdx = localItems.indexOfFirst { it.id == from.key }
+        val toIdx = localItems.indexOfFirst { it.id == to.key }
+        if (fromIdx != -1 && toIdx != -1) {
+            localItems = localItems.toMutableList().apply { add(toIdx, removeAt(fromIdx)) }
+        }
+    }
+
+    val allCrossed = items.isNotEmpty() && items.all { it.crossed }
+
+    LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize()) {
+        item(key = "header") {
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = allCrossed,
+                        onCheckedChange = { viewModel.setCategoryCrossed(category.id, it) }
+                    )
+                    Text(category.name, fontWeight = FontWeight.Bold, color = Color.Gray)
+                }
+                AddField(onAdd = { viewModel.addItem(category.id, it, atEnd = false) })
+            }
+        }
+        items(localItems, key = { it.id }) { item ->
+            ReorderableItem(reorderableState, key = item.id) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = UnplannedBg),
+                    border = BorderStroke(1.dp, UnplannedBorder)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = item.crossed,
+                            onCheckedChange = { viewModel.setCrossed(item, it) }
+                        )
+                        Text(
+                            item.name,
+                            textDecoration = if (item.crossed) TextDecoration.LineThrough else null,
+                            color = if (item.crossed) Color.Gray else Color.Unspecified,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { renameTarget = item }) {
+                            Icon(Icons.Filled.Edit, "Rename", tint = FlagBlue)
+                        }
+                        IconButton(onClick = { viewModel.deleteItem(item) }) {
+                            Icon(Icons.Filled.Delete, "Delete", tint = FlagBlue)
+                        }
+                        IconButton(
+                            onClick = {},
+                            modifier = Modifier.draggableHandle(
+                                onDragStopped = { viewModel.reorderItems(localItems) }
+                            )
+                        ) {
+                            Icon(Icons.Filled.DragHandle, "Reorder", tint = FlagBlue)
+                        }
+                    }
+                }
+            }
+        }
+        item(key = "footer") {
+            Column {
+                AddField(onAdd = { viewModel.addItem(category.id, it, atEnd = true) })
+                Spacer(Modifier.padding(bottom = 24.dp))
+            }
+        }
+    }
+
+    renameTarget?.let { target ->
+        RenameDialog(
+            title = "Rename item",
+            initial = target.name,
+            onConfirm = { viewModel.renameItem(target, it) },
+            onDismiss = { renameTarget = null }
+        )
+    }
+}

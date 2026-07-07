@@ -42,10 +42,11 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
 
     // --- Categories ---
 
-    fun addCategory(name: String) = viewModelScope.launch {
+    fun addCategory(name: String, atEnd: Boolean = true) = viewModelScope.launch {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return@launch
-        val pos = (categories.value.maxOfOrNull { it.position } ?: -1) + 1
+        val pos = if (atEnd) (categories.value.maxOfOrNull { it.position } ?: -1) + 1
+        else (categories.value.minOfOrNull { it.position } ?: 1) - 1
         dao.insertCategory(Category(name = trimmed, position = pos))
     }
 
@@ -70,10 +71,12 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
 
     // --- Items ---
 
-    fun addItem(categoryId: Long, name: String) = viewModelScope.launch {
+    fun addItem(categoryId: Long, name: String, atEnd: Boolean = true) = viewModelScope.launch {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return@launch
-        val pos = (itemsFor(categoryId).maxOfOrNull { it.position } ?: -1) + 1
+        val siblings = itemsFor(categoryId)
+        val pos = if (atEnd) (siblings.maxOfOrNull { it.position } ?: -1) + 1
+        else (siblings.minOfOrNull { it.position } ?: 1) - 1
         dao.insertItem(Item(categoryId = categoryId, name = trimmed, position = pos))
     }
 
