@@ -1,15 +1,19 @@
 package com.mmnuig.shoplistcc
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.mmnuig.shoplistcc.data.AppDatabase
 import com.mmnuig.shoplistcc.data.Category
 import com.mmnuig.shoplistcc.data.Item
 import com.mmnuig.shoplistcc.data.Pref
+import com.mmnuig.shoplistcc.xlsx.Xlsx
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -114,19 +118,49 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
 
     // --- Import/Export ---
 
-    fun replaceAll(data: List<Pair<String, List<Pair<String, Boolean>>>>) = viewModelScope.launch {
-        dao.replaceAll(
-            data.mapIndexed { catPos, (catName, itemList) ->
-                Category(name = catName, position = catPos) to
-                    itemList.mapIndexed { itemPos, (itemName, crossed) ->
-                        Item(
-                            categoryId = 0,
-                            name = itemName,
-                            position = itemPos,
-                            crossed = crossed
-                        )
-                    }
+    fun importFrom(uri: Uri, onResult: (String) -> Unit) = viewModelScope.launch {
+        try {
+            val data = withContext(Dispatchers.IO) {
+                getApplication<Application>().contentResolver.openInputStream(uri)
+                    ?.use { Xlsx.read(it) }
+                    ?: throw IllegalStateException("Cannot open file")
             }
-        )
+            if (data.isEmpty()) {
+                onResult("No categories found in file")
+                return@launch
+            }
+            dao.replaceAll(
+                data.mapIndexed { catPos, (catName, itemList) ->
+                    Category(name = catName, position = catPos) to
+                        itemList.mapIndexed { itemPos, (itemName, crossed) ->
+                            Item(
+                                categoryId = 0,
+                                name = itemName,
+                                position = itemPos,
+                                crossed = crossed
+                            )
+                        }
+                }
+            )
+            onResult("Imported ${data.size} categories, ${data.sumOf { it.second.size }} items")
+        } catch (e: Exception) {
+            onResult("Import failed: ${e.message}")
+        }
+    }
+
+    fun exportTo(uri: Uri, onResult: (String) -> Unit) = viewModelScope.launch {
+        try {
+            val data = categories.value.map { c ->
+                c.name to itemsFor(c.id).map { it.name to it.crossed }
+            }
+            withContext(Dispatchers.IO) {
+                getApplication<Application>().contentResolver.openOutputStream(uri, "wt")
+                    ?.use { Xlsx.write(it, data) }
+                    ?: throw IllegalStateException("Cannot open file")
+            }
+            onResult("Exported ${data.size} categories, ${data.sumOf { it.second.size }} items")
+        } catch (e: Exception) {
+            onResult("Export failed: ${e.message}")
+        }
     }
 }

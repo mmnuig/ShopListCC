@@ -56,6 +56,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.reorderable)
     testImplementation(libs.junit)
+    testImplementation("net.sf.kxml:kxml2:2.3.0")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

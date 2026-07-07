@@ -1,21 +1,30 @@
 package com.mmnuig.shoplistcc
 
+import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.Text
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mmnuig.shoplistcc.ui.ConfirmDialog
 import com.mmnuig.shoplistcc.ui.HomeScreen
 import com.mmnuig.shoplistcc.ui.PlanScreen
 import com.mmnuig.shoplistcc.ui.ShopScreen
 import com.mmnuig.shoplistcc.ui.theme.ShopListCCTheme
+
+private const val XLSX_MIME =
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 enum class Screen { Home, Plan, Shop }
 
@@ -34,7 +43,19 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ShopListApp() {
     val viewModel: ShopViewModel = viewModel()
+    val context = LocalContext.current
     var screen by rememberSaveable { mutableStateOf(Screen.Home) }
+    var pendingImport by remember { mutableStateOf<Uri?>(null) }
+
+    val toast = { msg: String -> Toast.makeText(context, msg, Toast.LENGTH_LONG).show() }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri -> pendingImport = uri }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(XLSX_MIME)
+    ) { uri -> uri?.let { viewModel.exportTo(it) { msg -> toast(msg) } } }
 
     BackHandler(enabled = screen != Screen.Home) { screen = Screen.Home }
 
@@ -42,10 +63,22 @@ fun ShopListApp() {
         Screen.Home -> HomeScreen(
             onShop = { screen = Screen.Shop },
             onPlan = { screen = Screen.Plan },
-            onImport = { /* wired in import/export milestone */ },
-            onExport = { /* wired in import/export milestone */ }
+            onImport = {
+                importLauncher.launch(arrayOf(XLSX_MIME, "application/octet-stream"))
+            },
+            onExport = { exportLauncher.launch("ShopList.xlsx") }
         )
         Screen.Plan -> PlanScreen(viewModel, onHome = { screen = Screen.Home })
         Screen.Shop -> ShopScreen(viewModel, onHome = { screen = Screen.Home })
+    }
+
+    pendingImport?.let { uri ->
+        ConfirmDialog(
+            title = "Import shopping list",
+            message = "This replaces ALL current categories and items with the file contents. Continue?",
+            confirmLabel = "Replace",
+            onConfirm = { viewModel.importFrom(uri) { msg -> toast(msg) } },
+            onDismiss = { pendingImport = null }
+        )
     }
 }
