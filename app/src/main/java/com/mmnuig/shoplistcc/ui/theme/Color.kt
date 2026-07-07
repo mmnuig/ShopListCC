@@ -2,10 +2,17 @@ package com.mmnuig.shoplistcc.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Brand
+val GreenPrimary = Color(0xFF4CAF50)
+val GreenDark = Color(0xFF388E3C)
+val GreenContainer = Color(0xFFC8E6C9)
+val OnGreenContainer = Color(0xFF1B5E20)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Shop item states
+val PlannedBg = Color(0xFFDCF5DC)      // bright green: on this week's list
+val PlannedBorder = Color(0xFF66BB6A)
+val BoughtBg = Color(0xFFB6DFB8)       // slightly darker green: bought
+val BoughtBorder = Color(0xFF4CAF50)
+val UnplannedBg = Color(0xFFE3F0FA)    // dull blue: not on this week's list
+val UnplannedBorder = Color(0xFF90CAF9)
+val FlagBlue = Color(0xFF2196F3)
