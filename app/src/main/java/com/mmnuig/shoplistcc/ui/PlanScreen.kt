@@ -2,6 +2,7 @@ package com.mmnuig.shoplistcc.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -43,6 +44,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -177,9 +179,15 @@ private fun PlanCategoriesPage(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 4.dp)
-                        .clickable {
-                            val index = categories.indexOfFirst { it.id == category.id }
-                            if (index != -1) onOpenCategory(index)
+                        .pointerInput(category.id) {
+                            val open = {
+                                val idx = categories.indexOfFirst { it.id == category.id }
+                                if (idx != -1) onOpenCategory(idx)
+                            }
+                            detectTapGestures(
+                                onTap = { open() },
+                                onDoubleTap = { open() }
+                            )
                         },
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

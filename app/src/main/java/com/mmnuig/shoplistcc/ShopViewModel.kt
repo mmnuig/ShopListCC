@@ -98,19 +98,28 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
 
     // --- Items ---
 
+    /** Title-case a name the user typed all in lowercase; leave mixed case alone. */
+    private fun tidyName(raw: String): String {
+        val trimmed = raw.trim()
+        if (trimmed != trimmed.lowercase()) return trimmed
+        return trimmed.split(Regex("\\s+"))
+            .joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } }
+    }
+
     fun addItem(categoryId: Long, name: String, atEnd: Boolean = true) = viewModelScope.launch {
-        val trimmed = name.trim()
-        if (trimmed.isEmpty()) return@launch
+        val tidied = tidyName(name)
+        if (tidied.isEmpty()) return@launch
         val siblings = itemsFor(categoryId)
         val pos = if (atEnd) (siblings.maxOfOrNull { it.position } ?: -1) + 1
         else (siblings.minOfOrNull { it.position } ?: 1) - 1
-        dao.insertItem(Item(categoryId = categoryId, name = trimmed, position = pos))
+        dao.insertItem(Item(categoryId = categoryId, name = tidied, position = pos))
     }
 
     fun renameItem(item: Item, name: String) = viewModelScope.launch {
-        val trimmed = name.trim()
-        if (trimmed.isEmpty()) return@launch
-        dao.updateItem(item.copy(name = trimmed))
+        val tidied = tidyName(name)
+        if (tidied.isEmpty()) return@launch
+        // An edited item is treated as newly wanted: back on this week's list.
+        dao.updateItem(item.copy(name = tidied, crossed = false))
     }
 
     fun deleteItem(item: Item) = viewModelScope.launch {
