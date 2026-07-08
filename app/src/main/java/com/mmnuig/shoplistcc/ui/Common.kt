@@ -27,6 +27,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -42,10 +43,15 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GreenTopBar(title: String, onHome: () -> Unit) {
+fun GreenTopBar(
+    title: String,
+    onHome: () -> Unit,
+    extraActions: @Composable () -> Unit = {}
+) {
     TopAppBar(
         title = { Text(title, fontWeight = FontWeight.Bold) },
         actions = {
+            extraActions()
             IconButton(onClick = onHome) {
                 Icon(
                     Icons.Filled.Home,
@@ -70,16 +76,19 @@ fun GreenTopBar(title: String, onHome: () -> Unit) {
 fun WrapAroundPager(
     pageCount: Int,
     modifier: Modifier = Modifier,
+    initialPage: Int = 0,
+    onPageChanged: (Int) -> Unit = {},
     content: @Composable (page: Int, goTo: (Int) -> Unit) -> Unit
 ) {
     if (pageCount <= 0) return
     key(pageCount) {
         val virtualCount = pageCount * 1000
-        val pagerState = rememberPagerState(initialPage = virtualCount / 2 - (virtualCount / 2) % pageCount) {
-            virtualCount
-        }
+        val start = virtualCount / 2 - (virtualCount / 2) % pageCount +
+            initialPage.coerceIn(0, pageCount - 1)
+        val pagerState = rememberPagerState(initialPage = start) { virtualCount }
         val scope = rememberCoroutineScope()
         val current = pagerState.currentPage % pageCount
+        LaunchedEffect(current) { onPageChanged(current) }
         val goTo: (Int) -> Unit = { target ->
             val base = pagerState.currentPage - pagerState.currentPage % pageCount
             scope.launch { pagerState.animateScrollToPage(base + target.coerceIn(0, pageCount - 1)) }

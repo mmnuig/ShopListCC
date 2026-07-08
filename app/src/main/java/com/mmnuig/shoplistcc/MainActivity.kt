@@ -11,6 +11,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -47,6 +48,10 @@ fun ShopListApp() {
     val viewModel: ShopViewModel = viewModel()
     val context = LocalContext.current
     var screen by rememberSaveable { mutableStateOf(Screen.Home) }
+    // Page each mode opens on: 0 from Home, or the matching category page when
+    // jumping between Plan and Shop.
+    var planStart by rememberSaveable { mutableIntStateOf(0) }
+    var shopStart by rememberSaveable { mutableIntStateOf(0) }
     var pendingImport by remember { mutableStateOf<Uri?>(null) }
 
     val toast = { msg: String -> Toast.makeText(context, msg, Toast.LENGTH_LONG).show() }
@@ -63,8 +68,8 @@ fun ShopListApp() {
 
     when (screen) {
         Screen.Home -> HomeScreen(
-            onShop = { screen = Screen.Shop },
-            onPlan = { screen = Screen.Plan },
+            onShop = { shopStart = 0; screen = Screen.Shop },
+            onPlan = { planStart = 0; screen = Screen.Plan },
             onImport = {
                 importLauncher.launch(arrayOf(XLSX_MIME, "application/octet-stream"))
             },
@@ -73,8 +78,24 @@ fun ShopListApp() {
                 exportLauncher.launch("Shop-$today.xlsx")
             }
         )
-        Screen.Plan -> PlanScreen(viewModel, onHome = { screen = Screen.Home })
-        Screen.Shop -> ShopScreen(viewModel, onHome = { screen = Screen.Home })
+        Screen.Plan -> PlanScreen(
+            viewModel,
+            onHome = { screen = Screen.Home },
+            initialPage = planStart,
+            onSwitchToShop = { categoryIndex ->
+                shopStart = categoryIndex.coerceAtLeast(0)
+                screen = Screen.Shop
+            }
+        )
+        Screen.Shop -> ShopScreen(
+            viewModel,
+            onHome = { screen = Screen.Home },
+            initialPage = shopStart,
+            onSwitchToPlan = { categoryIndex ->
+                planStart = categoryIndex + 1
+                screen = Screen.Plan
+            }
+        )
     }
 
     pendingImport?.let { uri ->

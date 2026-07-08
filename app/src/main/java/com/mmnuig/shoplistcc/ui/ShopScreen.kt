@@ -12,18 +12,25 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,25 +50,47 @@ import com.mmnuig.shoplistcc.ui.theme.UnplannedBg
 import com.mmnuig.shoplistcc.ui.theme.UnplannedBorder
 
 @Composable
-fun ShopScreen(viewModel: ShopViewModel, onHome: () -> Unit) {
-    val categories by viewModel.categories.collectAsState()
+fun ShopScreen(
+    viewModel: ShopViewModel,
+    onHome: () -> Unit,
+    initialPage: Int = 0,
+    onSwitchToPlan: (categoryIndex: Int) -> Unit = {}
+) {
+    val categories = viewModel.categories.collectAsState().value ?: return
     val items by viewModel.items.collectAsState()
     val planDate by viewModel.planDate.collectAsState()
+    var currentPage by remember { mutableStateOf(initialPage) }
 
     val title = formatPlanDate(planDate)?.let { "Shop (Planned $it)" } ?: "Shop"
 
-    Scaffold(topBar = { GreenTopBar(title, onHome) }) { innerPadding ->
+    Scaffold(topBar = {
+        GreenTopBar(title, onHome, extraActions = {
+            IconButton(onClick = {
+                onSwitchToPlan(if (currentPage < categories.size) currentPage else -1)
+            }) {
+                Icon(
+                    Icons.Filled.CalendarMonth,
+                    contentDescription = "Switch to Plan",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+        })
+    }) { innerPadding ->
         // Pages 0..N-1: one category per page; page N: summary. Wraps around.
+        val pageCount = categories.size + 1
         WrapAroundPager(
-            pageCount = categories.size + 1,
-            modifier = Modifier.padding(innerPadding)
+            pageCount = pageCount,
+            modifier = Modifier.padding(innerPadding),
+            initialPage = initialPage,
+            onPageChanged = { currentPage = it }
         ) { page, goTo ->
             if (page < categories.size) {
                 ShopCategoryPage(
                     viewModel,
                     categories[page],
                     items.filter { it.categoryId == categories[page].id },
-                    number = page + 1
+                    number = page + 1,
+                    onNext = { goTo((page + 1) % pageCount) }
                 )
             } else {
                 ShopSummaryPage(categories, items, onOpenCategory = goTo)
@@ -75,7 +104,8 @@ private fun ShopCategoryPage(
     viewModel: ShopViewModel,
     category: Category,
     items: List<Item>,
-    number: Int
+    number: Int,
+    onNext: () -> Unit
 ) {
     val crossedOff = items.count { it.bought || it.crossed }
     LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -101,6 +131,23 @@ private fun ShopCategoryPage(
                 onToggle = { viewModel.shopToggle(item) },
                 onFlag = { viewModel.setFlagged(item, !item.flagged) }
             )
+        }
+        if (items.isNotEmpty() && crossedOff == items.size) {
+            item(key = "next") {
+                Button(
+                    onClick = onNext,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 12.dp)
+                ) {
+                    Text("Next category")
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+            }
         }
     }
 }

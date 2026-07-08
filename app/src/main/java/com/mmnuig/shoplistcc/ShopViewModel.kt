@@ -11,6 +11,8 @@ import com.mmnuig.shoplistcc.data.Pref
 import com.mmnuig.shoplistcc.xlsx.Xlsx
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -21,8 +23,11 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
 
     private val dao = AppDatabase.get(app).dao()
 
-    val categories = dao.categories()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    // null until the database has emitted; screens wait for it so the pager is
+    // created with the right page count (matters for state restoration).
+    val categories: StateFlow<List<Category>?> = dao.categories()
+        .map<List<Category>, List<Category>?> { it }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val items = dao.items()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -49,8 +54,9 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
     fun addCategory(name: String, atEnd: Boolean = true) = viewModelScope.launch {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return@launch
-        val pos = if (atEnd) (categories.value.maxOfOrNull { it.position } ?: -1) + 1
-        else (categories.value.minOfOrNull { it.position } ?: 1) - 1
+        val existing = categories.value.orEmpty()
+        val pos = if (atEnd) (existing.maxOfOrNull { it.position } ?: -1) + 1
+        else (existing.minOfOrNull { it.position } ?: 1) - 1
         dao.insertCategory(Category(name = trimmed, position = pos))
     }
 
@@ -172,7 +178,7 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
 
     fun exportTo(uri: Uri, onResult: (String) -> Unit) = viewModelScope.launch {
         try {
-            val data = categories.value.mapIndexed { i, c ->
+            val data = categories.value.orEmpty().mapIndexed { i, c ->
                 "${i + 1} ${c.name}" to itemsFor(c.id).map { it.name to it.crossed }
             }
             withContext(Dispatchers.IO) {

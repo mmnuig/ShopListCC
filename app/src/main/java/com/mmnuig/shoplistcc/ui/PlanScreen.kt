@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -63,10 +64,16 @@ fun formatPlanDate(iso: String?): String? = try {
 }
 
 @Composable
-fun PlanScreen(viewModel: ShopViewModel, onHome: () -> Unit) {
-    val categories by viewModel.categories.collectAsState()
+fun PlanScreen(
+    viewModel: ShopViewModel,
+    onHome: () -> Unit,
+    initialPage: Int = 0,
+    onSwitchToShop: (categoryIndex: Int) -> Unit = {}
+) {
+    val categories = viewModel.categories.collectAsState().value ?: return
     val items by viewModel.items.collectAsState()
     val planDate by viewModel.planDate.collectAsState()
+    var currentPage by remember { mutableStateOf(initialPage) }
 
     val title = formatPlanDate(planDate)?.let { "Plan: $it" } ?: "Plan"
 
@@ -85,12 +92,24 @@ fun PlanScreen(viewModel: ShopViewModel, onHome: () -> Unit) {
     }
 
     Scaffold(
-        topBar = { GreenTopBar(title, onHome) },
+        topBar = {
+            GreenTopBar(title, onHome, extraActions = {
+                IconButton(onClick = { onSwitchToShop(currentPage - 1) }) {
+                    Icon(
+                        Icons.Filled.ShoppingCart,
+                        contentDescription = "Switch to Shop",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            })
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         WrapAroundPager(
             pageCount = categories.size + 1,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            initialPage = initialPage,
+            onPageChanged = { currentPage = it }
         ) { page, goTo ->
             if (page == 0) {
                 PlanCategoriesPage(
