@@ -23,6 +23,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,13 +55,14 @@ fun GreenTopBar(title: String, onHome: () -> Unit) {
 
 /**
  * HorizontalPager that wraps around in both directions: swiping past the last
- * page returns to the first and vice versa.
+ * page returns to the first and vice versa. The content lambda receives a
+ * goTo(page) function for programmatic navigation.
  */
 @Composable
 fun WrapAroundPager(
     pageCount: Int,
     modifier: Modifier = Modifier,
-    content: @Composable (page: Int) -> Unit
+    content: @Composable (page: Int, goTo: (Int) -> Unit) -> Unit
 ) {
     if (pageCount <= 0) return
     key(pageCount) {
@@ -67,8 +70,12 @@ fun WrapAroundPager(
         val pagerState = rememberPagerState(initialPage = virtualCount / 2 - (virtualCount / 2) % pageCount) {
             virtualCount
         }
+        val scope = rememberCoroutineScope()
         HorizontalPager(state = pagerState, modifier = modifier.fillMaxSize()) { page ->
-            content(page % pageCount)
+            content(page % pageCount) { target ->
+                val base = pagerState.currentPage - pagerState.currentPage % pageCount
+                scope.launch { pagerState.animateScrollToPage(base + target) }
+            }
         }
     }
 }

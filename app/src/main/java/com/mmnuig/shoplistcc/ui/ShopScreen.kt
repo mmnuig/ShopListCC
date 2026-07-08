@@ -1,6 +1,7 @@
 package com.mmnuig.shoplistcc.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -51,7 +52,7 @@ fun ShopScreen(viewModel: ShopViewModel, onHome: () -> Unit) {
         WrapAroundPager(
             pageCount = categories.size + 1,
             modifier = Modifier.padding(innerPadding)
-        ) { page ->
+        ) { page, goTo ->
             if (page < categories.size) {
                 ShopCategoryPage(
                     viewModel,
@@ -59,7 +60,7 @@ fun ShopScreen(viewModel: ShopViewModel, onHome: () -> Unit) {
                     items.filter { it.categoryId == categories[page].id }
                 )
             } else {
-                ShopSummaryPage(categories, items)
+                ShopSummaryPage(categories, items, onOpenCategory = goTo)
             }
         }
     }
@@ -71,7 +72,7 @@ private fun ShopCategoryPage(
     category: Category,
     items: List<Item>
 ) {
-    val remaining = items.count { !it.bought }
+    val remaining = items.count { !it.bought && !it.crossed }
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item(key = "header") {
             Row(
@@ -92,7 +93,7 @@ private fun ShopCategoryPage(
         items(items, key = { it.id }) { item ->
             ShopItemCard(
                 item = item,
-                onBought = { viewModel.setBought(item, it) },
+                onToggle = { viewModel.shopToggle(item) },
                 onFlag = { viewModel.setFlagged(item, !item.flagged) }
             )
         }
@@ -102,16 +103,16 @@ private fun ShopCategoryPage(
 @Composable
 private fun ShopItemCard(
     item: Item,
-    onBought: (Boolean) -> Unit,
+    onToggle: () -> Unit,
     onFlag: () -> Unit
 ) {
-    // Planned items (not crossed off in Plan) are bright green; bought ones a
-    // slightly darker green. Unplanned items are a dull blue either way.
-    val planned = !item.crossed
+    // Checked = crossed out: either excluded by Plan (dull blue) or bought
+    // (slightly darker green). Open items on this week's list are bright green.
+    val checked = item.bought || item.crossed
     val (bg, border) = when {
-        planned && item.bought -> BoughtBg to BoughtBorder
-        planned -> PlannedBg to PlannedBorder
-        else -> UnplannedBg to UnplannedBorder
+        item.crossed -> UnplannedBg to UnplannedBorder
+        item.bought -> BoughtBg to BoughtBorder
+        else -> PlannedBg to PlannedBorder
     }
     Card(
         modifier = Modifier
@@ -121,11 +122,11 @@ private fun ShopItemCard(
         border = BorderStroke(1.dp, border)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = item.bought, onCheckedChange = onBought)
+            Checkbox(checked = checked, onCheckedChange = { onToggle() })
             Text(
                 item.name,
-                textDecoration = if (item.bought) TextDecoration.LineThrough else null,
-                color = if (item.bought) Color.Gray else Color.Unspecified,
+                textDecoration = if (checked) TextDecoration.LineThrough else null,
+                color = if (checked) Color.Gray else Color.Unspecified,
                 modifier = Modifier.weight(1f)
             )
             IconButton(onClick = onFlag) {
@@ -140,7 +141,11 @@ private fun ShopItemCard(
 }
 
 @Composable
-private fun ShopSummaryPage(categories: List<Category>, items: List<Item>) {
+private fun ShopSummaryPage(
+    categories: List<Category>,
+    items: List<Item>,
+    onOpenCategory: (Int) -> Unit
+) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item(key = "header") {
             Text(
@@ -157,7 +162,11 @@ private fun ShopSummaryPage(categories: List<Category>, items: List<Item>) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+                    .clickable {
+                        val index = categories.indexOfFirst { it.id == category.id }
+                        if (index != -1) onOpenCategory(index)
+                    },
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {

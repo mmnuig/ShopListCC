@@ -106,6 +106,19 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
         dao.updateItem(item.copy(bought = bought))
     }
 
+    /**
+     * Shop-mode checkbox: checked means "crossed out" (bought, or excluded by
+     * Plan). Ticking an open item marks it bought; unticking a crossed item
+     * clears both flags, pulling it back onto this week's list.
+     */
+    fun shopToggle(item: Item) = viewModelScope.launch {
+        if (item.bought || item.crossed) {
+            dao.updateItem(item.copy(bought = false, crossed = false))
+        } else {
+            dao.updateItem(item.copy(bought = true))
+        }
+    }
+
     fun setFlagged(item: Item, flagged: Boolean) = viewModelScope.launch {
         dao.updateItem(item.copy(flagged = flagged))
     }

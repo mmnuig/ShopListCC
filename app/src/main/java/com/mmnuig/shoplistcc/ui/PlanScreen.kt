@@ -1,6 +1,7 @@
 package com.mmnuig.shoplistcc.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -66,9 +67,12 @@ fun PlanScreen(viewModel: ShopViewModel, onHome: () -> Unit) {
         WrapAroundPager(
             pageCount = categories.size + 1,
             modifier = Modifier.padding(innerPadding)
-        ) { page ->
+        ) { page, goTo ->
             if (page == 0) {
-                PlanCategoriesPage(viewModel, categories, items)
+                PlanCategoriesPage(
+                    viewModel, categories, items,
+                    onOpenCategory = { index -> goTo(index + 1) }
+                )
             } else {
                 PlanCategoryPage(
                     viewModel,
@@ -84,7 +88,8 @@ fun PlanScreen(viewModel: ShopViewModel, onHome: () -> Unit) {
 private fun PlanCategoriesPage(
     viewModel: ShopViewModel,
     categories: List<Category>,
-    items: List<Item>
+    items: List<Item>,
+    onOpenCategory: (Int) -> Unit
 ) {
     var showClearAll by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<Category?>(null) }
@@ -128,7 +133,11 @@ private fun PlanCategoriesPage(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                        .clickable {
+                            val index = categories.indexOfFirst { it.id == category.id }
+                            if (index != -1) onOpenCategory(index)
+                        },
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
