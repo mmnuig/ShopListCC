@@ -10,13 +10,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.FormatSize
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -35,12 +40,37 @@ fun HomeScreen(
     onShop: () -> Unit,
     onPlan: () -> Unit,
     onImport: () -> Unit,
-    onExport: () -> Unit
+    onExport: () -> Unit,
+    largeText: Boolean = false,
+    theme: String = "system",
+    onToggleLargeText: () -> Unit = {},
+    onCycleTheme: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("ShopListCC") },
+                actions = {
+                    IconButton(onClick = onToggleLargeText) {
+                        Icon(
+                            Icons.Filled.FormatSize,
+                            contentDescription = if (largeText) "Normal text size" else "Large text size",
+                            tint = if (largeText) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
+                        )
+                    }
+                    IconButton(onClick = onCycleTheme) {
+                        Icon(
+                            when (theme) {
+                                "light" -> Icons.Filled.LightMode
+                                "dark" -> Icons.Filled.DarkMode
+                                else -> Icons.Filled.BrightnessAuto
+                            },
+                            contentDescription = "Theme: $theme (tap to change)",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary

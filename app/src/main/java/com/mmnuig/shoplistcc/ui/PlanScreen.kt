@@ -49,9 +49,7 @@ import androidx.compose.ui.unit.dp
 import com.mmnuig.shoplistcc.ShopViewModel
 import com.mmnuig.shoplistcc.data.Category
 import com.mmnuig.shoplistcc.data.Item
-import com.mmnuig.shoplistcc.ui.theme.FlagBlue
-import com.mmnuig.shoplistcc.ui.theme.UnplannedBg
-import com.mmnuig.shoplistcc.ui.theme.UnplannedBorder
+import com.mmnuig.shoplistcc.ui.theme.LocalShopColors
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import java.time.LocalDate
@@ -157,7 +155,7 @@ private fun PlanCategoriesPage(
                 Text(
                     "Categories",
                     fontWeight = FontWeight.Bold,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 16.dp, top = 8.dp)
                 )
                 Button(
@@ -183,7 +181,7 @@ private fun PlanCategoriesPage(
                             val index = categories.indexOfFirst { it.id == category.id }
                             if (index != -1) onOpenCategory(index)
                         },
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -197,10 +195,10 @@ private fun PlanCategoriesPage(
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(onClick = { renameTarget = category }) {
-                            Icon(Icons.Filled.Edit, "Rename", tint = FlagBlue)
+                            Icon(Icons.Filled.Edit, "Rename", tint = LocalShopColors.current.flag)
                         }
                         IconButton(onClick = { deleteTarget = category }) {
-                            Icon(Icons.Filled.Delete, "Delete", tint = FlagBlue)
+                            Icon(Icons.Filled.Delete, "Delete", tint = LocalShopColors.current.flag)
                         }
                         IconButton(
                             onClick = {},
@@ -208,7 +206,7 @@ private fun PlanCategoriesPage(
                                 onDragStopped = { viewModel.reorderCategories(localCategories) }
                             )
                         ) {
-                            Icon(Icons.Filled.DragHandle, "Reorder", tint = FlagBlue)
+                            Icon(Icons.Filled.DragHandle, "Reorder", tint = LocalShopColors.current.flag)
                         }
                     }
                 }
@@ -299,7 +297,7 @@ private fun PlanCategoryPage(
                         checked = allCrossed,
                         onCheckedChange = { viewModel.setCategoryCrossed(category.id, it) }
                     )
-                    Text("$number ${category.name}", fontWeight = FontWeight.Bold, color = Color.Gray)
+                    Text("$number ${category.name}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 AddField(onAdd = { viewModel.addItem(category.id, it, atEnd = false) })
             }
@@ -311,8 +309,8 @@ private fun PlanCategoryPage(
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 4.dp)
                         .clickable { viewModel.setCrossed(item, !item.crossed) },
-                    colors = CardDefaults.cardColors(containerColor = UnplannedBg),
-                    border = BorderStroke(1.dp, UnplannedBorder)
+                    colors = CardDefaults.cardColors(containerColor = LocalShopColors.current.unplannedBg),
+                    border = BorderStroke(1.dp, LocalShopColors.current.unplannedBorder)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
@@ -322,14 +320,14 @@ private fun PlanCategoryPage(
                         Text(
                             item.name,
                             textDecoration = if (item.crossed) TextDecoration.LineThrough else null,
-                            color = if (item.crossed) Color.Gray else Color.Unspecified,
+                            color = if (item.crossed) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified,
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(onClick = { renameTarget = item }) {
-                            Icon(Icons.Filled.Edit, "Rename", tint = FlagBlue)
+                            Icon(Icons.Filled.Edit, "Rename", tint = LocalShopColors.current.flag)
                         }
                         IconButton(onClick = { onDeleteItem(item) }) {
-                            Icon(Icons.Filled.Delete, "Delete", tint = FlagBlue)
+                            Icon(Icons.Filled.Delete, "Delete", tint = LocalShopColors.current.flag)
                         }
                         IconButton(
                             onClick = {},
@@ -337,7 +335,7 @@ private fun PlanCategoryPage(
                                 onDragStopped = { viewModel.reorderItems(localItems) }
                             )
                         ) {
-                            Icon(Icons.Filled.DragHandle, "Reorder", tint = FlagBlue)
+                            Icon(Icons.Filled.DragHandle, "Reorder", tint = LocalShopColors.current.flag)
                         }
                     }
                 }

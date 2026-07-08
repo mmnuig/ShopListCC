@@ -9,7 +9,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -36,16 +38,27 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ShopListCCTheme {
-                ShopListApp()
+            val viewModel: ShopViewModel = viewModel()
+            val largeText by viewModel.largeText.collectAsState()
+            val themePref by viewModel.themePref.collectAsState()
+            val darkTheme = when (themePref) {
+                "dark" -> true
+                "light" -> false
+                else -> isSystemInDarkTheme()
+            }
+            ShopListCCTheme(darkTheme = darkTheme, largeText = largeText) {
+                ShopListApp(viewModel, largeText, themePref)
             }
         }
     }
 }
 
 @Composable
-fun ShopListApp() {
-    val viewModel: ShopViewModel = viewModel()
+fun ShopListApp(
+    viewModel: ShopViewModel,
+    largeText: Boolean,
+    themePref: String
+) {
     val context = LocalContext.current
     var screen by rememberSaveable { mutableStateOf(Screen.Home) }
     // Page each mode opens on: 0 from Home, or the matching category page when
@@ -76,6 +89,18 @@ fun ShopListApp() {
             onExport = {
                 val today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
                 exportLauncher.launch("Shop-$today.xlsx")
+            },
+            largeText = largeText,
+            theme = themePref,
+            onToggleLargeText = { viewModel.setLargeText(!largeText) },
+            onCycleTheme = {
+                viewModel.setTheme(
+                    when (themePref) {
+                        "system" -> "light"
+                        "light" -> "dark"
+                        else -> "system"
+                    }
+                )
             }
         )
         Screen.Plan -> PlanScreen(

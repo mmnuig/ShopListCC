@@ -41,13 +41,7 @@ import androidx.compose.ui.unit.dp
 import com.mmnuig.shoplistcc.ShopViewModel
 import com.mmnuig.shoplistcc.data.Category
 import com.mmnuig.shoplistcc.data.Item
-import com.mmnuig.shoplistcc.ui.theme.BoughtBg
-import com.mmnuig.shoplistcc.ui.theme.BoughtBorder
-import com.mmnuig.shoplistcc.ui.theme.FlagBlue
-import com.mmnuig.shoplistcc.ui.theme.PlannedBg
-import com.mmnuig.shoplistcc.ui.theme.PlannedBorder
-import com.mmnuig.shoplistcc.ui.theme.UnplannedBg
-import com.mmnuig.shoplistcc.ui.theme.UnplannedBorder
+import com.mmnuig.shoplistcc.ui.theme.LocalShopColors
 
 @Composable
 fun ShopScreen(
@@ -119,10 +113,10 @@ private fun ShopCategoryPage(
                 Text(
                     "$number ${category.name}",
                     fontWeight = FontWeight.Bold,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f)
                 )
-                Text("$crossedOff/${items.size}", color = Color.Gray)
+                Text("$crossedOff/${items.size}", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         items(items, key = { it.id }) { item ->
@@ -161,10 +155,11 @@ private fun ShopItemCard(
     // Checked = crossed out: either excluded by Plan (dull blue) or bought
     // (slightly darker green). Open items on this week's list are bright green.
     val checked = item.bought || item.crossed
+    val shopColors = LocalShopColors.current
     val (bg, border) = when {
-        item.crossed -> UnplannedBg to UnplannedBorder
-        item.bought -> BoughtBg to BoughtBorder
-        else -> PlannedBg to PlannedBorder
+        item.crossed -> shopColors.unplannedBg to shopColors.unplannedBorder
+        item.bought -> shopColors.boughtBg to shopColors.boughtBorder
+        else -> shopColors.plannedBg to shopColors.plannedBorder
     }
     Card(
         modifier = Modifier
@@ -179,14 +174,14 @@ private fun ShopItemCard(
             Text(
                 item.name,
                 textDecoration = if (checked) TextDecoration.LineThrough else null,
-                color = if (checked) Color.Gray else Color.Unspecified,
+                color = if (checked) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified,
                 modifier = Modifier.weight(1f)
             )
             IconButton(onClick = onFlag) {
                 Icon(
                     if (item.flagged) Icons.Filled.Flag else Icons.Outlined.Flag,
                     contentDescription = if (item.flagged) "Unflag" else "Flag",
-                    tint = FlagBlue
+                    tint = LocalShopColors.current.flag
                 )
             }
         }
@@ -204,7 +199,7 @@ private fun ShopSummaryPage(
             Text(
                 "Summary",
                 fontWeight = FontWeight.Bold,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(16.dp)
             )
         }
@@ -217,7 +212,7 @@ private fun ShopSummaryPage(
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 4.dp)
                     .clickable { onOpenCategory(index) },
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Row(
@@ -231,19 +226,19 @@ private fun ShopSummaryPage(
                     )
                     Text(
                         "$crossedOff/${catItems.size}",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.End,
                         modifier = Modifier.width(56.dp)
                     )
                     Icon(
                         Icons.Filled.Flag,
                         contentDescription = "Flagged",
-                        tint = FlagBlue,
+                        tint = LocalShopColors.current.flag,
                         modifier = Modifier.padding(start = 16.dp)
                     )
                     Text(
                         "$flagged",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.End,
                         modifier = Modifier.width(24.dp)
                     )

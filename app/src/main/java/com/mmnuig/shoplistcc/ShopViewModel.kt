@@ -35,6 +35,23 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
     val planDate = dao.pref("planDate")
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    val largeText = dao.pref("largeText")
+        .map { it == "1" }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    /** "system" (default), "light" or "dark". */
+    val themePref = dao.pref("theme")
+        .map { it ?: "system" }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "system")
+
+    fun setLargeText(large: Boolean) = viewModelScope.launch {
+        dao.setPref(Pref("largeText", if (large) "1" else "0"))
+    }
+
+    fun setTheme(theme: String) = viewModelScope.launch {
+        dao.setPref(Pref("theme", theme))
+    }
+
     init {
         viewModelScope.launch {
             if (dao.categoryCount() == 0) {
