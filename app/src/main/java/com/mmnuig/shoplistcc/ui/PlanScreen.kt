@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -77,7 +78,8 @@ fun PlanScreen(viewModel: ShopViewModel, onHome: () -> Unit) {
                 PlanCategoryPage(
                     viewModel,
                     categories[page - 1],
-                    items.filter { it.categoryId == categories[page - 1].id }
+                    items.filter { it.categoryId == categories[page - 1].id },
+                    number = page
                 )
             }
         }
@@ -126,7 +128,7 @@ private fun PlanCategoriesPage(
                 AddField(onAdd = { viewModel.addCategory(it, atEnd = false) })
             }
         }
-        items(localCategories, key = { it.id }) { category ->
+        itemsIndexed(localCategories, key = { _, category -> category.id }) { index, category ->
             ReorderableItem(reorderableState, key = category.id) {
                 val catItems = items.filter { it.categoryId == category.id }
                 val allCrossed = catItems.isNotEmpty() && catItems.all { it.crossed }
@@ -147,7 +149,7 @@ private fun PlanCategoriesPage(
                             onCheckedChange = { viewModel.setCategoryCrossed(category.id, it) }
                         )
                         Text(
-                            category.name,
+                            "${index + 1} ${category.name}",
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f)
                         )
@@ -228,7 +230,8 @@ private fun ClearAllDialog(
 private fun PlanCategoryPage(
     viewModel: ShopViewModel,
     category: Category,
-    items: List<Item>
+    items: List<Item>,
+    number: Int
 ) {
     var renameTarget by remember { mutableStateOf<Item?>(null) }
 
@@ -252,7 +255,7 @@ private fun PlanCategoryPage(
                         checked = allCrossed,
                         onCheckedChange = { viewModel.setCategoryCrossed(category.id, it) }
                     )
-                    Text(category.name, fontWeight = FontWeight.Bold, color = Color.Gray)
+                    Text("$number ${category.name}", fontWeight = FontWeight.Bold, color = Color.Gray)
                 }
                 AddField(onAdd = { viewModel.addItem(category.id, it, atEnd = false) })
             }

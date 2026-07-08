@@ -137,6 +137,10 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
                 getApplication<Application>().contentResolver.openInputStream(uri)
                     ?.use { Xlsx.read(it) }
                     ?: throw IllegalStateException("Cannot open file")
+            }.map { (name, itemList) ->
+                // Strip any leading number; categories are renumbered 1..N by
+                // their parse order.
+                name.replace(Regex("^\\d+\\s+"), "") to itemList
             }
             if (data.isEmpty()) {
                 onResult("No categories found in file")
@@ -163,8 +167,8 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
 
     fun exportTo(uri: Uri, onResult: (String) -> Unit) = viewModelScope.launch {
         try {
-            val data = categories.value.map { c ->
-                c.name to itemsFor(c.id).map { it.name to it.crossed }
+            val data = categories.value.mapIndexed { i, c ->
+                "${i + 1} ${c.name}" to itemsFor(c.id).map { it.name to it.crossed }
             }
             withContext(Dispatchers.IO) {
                 getApplication<Application>().contentResolver.openOutputStream(uri, "wt")

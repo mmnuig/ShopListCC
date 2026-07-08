@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.outlined.Flag
@@ -26,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.mmnuig.shoplistcc.ShopViewModel
@@ -57,7 +60,8 @@ fun ShopScreen(viewModel: ShopViewModel, onHome: () -> Unit) {
                 ShopCategoryPage(
                     viewModel,
                     categories[page],
-                    items.filter { it.categoryId == categories[page].id }
+                    items.filter { it.categoryId == categories[page].id },
+                    number = page + 1
                 )
             } else {
                 ShopSummaryPage(categories, items, onOpenCategory = goTo)
@@ -70,9 +74,10 @@ fun ShopScreen(viewModel: ShopViewModel, onHome: () -> Unit) {
 private fun ShopCategoryPage(
     viewModel: ShopViewModel,
     category: Category,
-    items: List<Item>
+    items: List<Item>,
+    number: Int
 ) {
-    val remaining = items.count { !it.bought && !it.crossed }
+    val crossedOff = items.count { it.bought || it.crossed }
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item(key = "header") {
             Row(
@@ -82,12 +87,12 @@ private fun ShopCategoryPage(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    category.name,
+                    "$number ${category.name}",
                     fontWeight = FontWeight.Bold,
                     color = Color.Gray,
                     modifier = Modifier.weight(1f)
                 )
-                Text("$remaining/${items.size}", color = Color.Gray)
+                Text("$crossedOff/${items.size}", color = Color.Gray)
             }
         }
         items(items, key = { it.id }) { item ->
@@ -155,18 +160,15 @@ private fun ShopSummaryPage(
                 modifier = Modifier.padding(16.dp)
             )
         }
-        items(categories, key = { it.id }) { category ->
+        itemsIndexed(categories, key = { _, category -> category.id }) { index, category ->
             val catItems = items.filter { it.categoryId == category.id }
-            val bought = catItems.count { it.bought }
+            val crossedOff = catItems.count { it.bought || it.crossed }
             val flagged = catItems.count { it.flagged }
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 4.dp)
-                    .clickable {
-                        val index = categories.indexOfFirst { it.id == category.id }
-                        if (index != -1) onOpenCategory(index)
-                    },
+                    .clickable { onOpenCategory(index) },
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
@@ -175,20 +177,28 @@ private fun ShopSummaryPage(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        category.name,
+                        "${index + 1} ${category.name}",
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f)
                     )
-                    Text("Bought $bought/${catItems.size}", color = Color.Gray)
-                    if (flagged > 0) {
-                        Icon(
-                            Icons.Filled.Flag,
-                            contentDescription = "Flagged",
-                            tint = FlagBlue,
-                            modifier = Modifier.padding(start = 12.dp)
-                        )
-                        Text("$flagged", color = FlagBlue)
-                    }
+                    Text(
+                        "$crossedOff/${catItems.size}",
+                        color = Color.Gray,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.width(56.dp)
+                    )
+                    Icon(
+                        Icons.Filled.Flag,
+                        contentDescription = "Flagged",
+                        tint = FlagBlue,
+                        modifier = Modifier.padding(start = 16.dp)
+                    )
+                    Text(
+                        "$flagged",
+                        color = Color.Gray,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.width(24.dp)
+                    )
                 }
             }
         }
