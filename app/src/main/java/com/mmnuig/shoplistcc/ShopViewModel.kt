@@ -60,6 +60,9 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
                         dao.insertCategory(Category(name = name, position = i))
                     }
             }
+            // Bought implies crossed off; repairs data written before the two
+            // states were unified.
+            dao.syncCrossedWithBought()
         }
     }
 
@@ -93,7 +96,8 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Tick a category in Plan mode: cross off (or uncross) every item in it. */
     fun setCategoryCrossed(categoryId: Long, crossed: Boolean) = viewModelScope.launch {
-        dao.setCategoryCrossed(categoryId, crossed)
+        if (crossed) dao.setCategoryCrossed(categoryId, true)
+        else dao.uncrossCategory(categoryId)
     }
 
     // --- Items ---
@@ -119,7 +123,7 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
         val tidied = tidyName(name)
         if (tidied.isEmpty()) return@launch
         // An edited item is treated as newly wanted: back on this week's list.
-        dao.updateItem(item.copy(name = tidied, crossed = false))
+        dao.updateItem(item.copy(name = tidied, crossed = false, bought = false))
     }
 
     fun deleteItem(item: Item) = viewModelScope.launch {
@@ -136,7 +140,12 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun setCrossed(item: Item, crossed: Boolean) = viewModelScope.launch {
-        dao.updateItem(item.copy(crossed = crossed))
+        // Uncrossing puts the item back on the list to buy, so it can't stay
+        // marked as bought; crossing keeps bought-ness for Shop's colouring.
+        dao.updateItem(
+            if (crossed) item.copy(crossed = true)
+            else item.copy(crossed = false, bought = false)
+        )
     }
 
     fun setBought(item: Item, bought: Boolean) = viewModelScope.launch {
@@ -145,14 +154,15 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
 
     /**
      * Shop-mode checkbox: checked means "crossed out" (bought, or excluded by
-     * Plan). Ticking an open item marks it bought; unticking a crossed item
-     * clears both flags, pulling it back onto this week's list.
+     * Plan). Ticking an open item marks it bought AND crossed off, so the
+     * cross-off shows in Plan too; unticking clears both flags, pulling the
+     * item back onto this week's list.
      */
     fun shopToggle(item: Item) = viewModelScope.launch {
         if (item.bought || item.crossed) {
             dao.updateItem(item.copy(bought = false, crossed = false))
         } else {
-            dao.updateItem(item.copy(bought = true))
+            dao.updateItem(item.copy(bought = true, crossed = true))
         }
     }
 
@@ -162,7 +172,7 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Clear All in Plan: cross or uncross every item, and stamp a new plan date. */
     fun setAllCrossed(crossed: Boolean) = viewModelScope.launch {
-        dao.setAllCrossed(crossed)
+        if (crossed) dao.setAllCrossed(true) else dao.uncrossAll()
         dao.setPref(Pref("planDate", LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)))
     }
 

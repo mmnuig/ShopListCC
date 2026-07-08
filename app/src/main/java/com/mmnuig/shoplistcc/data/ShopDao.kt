@@ -54,6 +54,16 @@ interface ShopDao {
     @Query("UPDATE items SET crossed = :crossed WHERE categoryId = :categoryId")
     suspend fun setCategoryCrossed(categoryId: Long, crossed: Boolean)
 
+    @Query("UPDATE items SET crossed = 0, bought = 0")
+    suspend fun uncrossAll()
+
+    @Query("UPDATE items SET crossed = 0, bought = 0 WHERE categoryId = :categoryId")
+    suspend fun uncrossCategory(categoryId: Long)
+
+    /** Invariant repair: a bought item is always also crossed off. */
+    @Query("UPDATE items SET crossed = 1 WHERE bought = 1")
+    suspend fun syncCrossedWithBought()
+
     @Query("SELECT value FROM prefs WHERE `key` = :key")
     fun pref(key: String): Flow<String?>
 
