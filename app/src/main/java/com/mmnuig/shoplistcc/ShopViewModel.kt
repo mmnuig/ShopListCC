@@ -69,18 +69,18 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
     // --- Categories ---
 
     fun addCategory(name: String, atEnd: Boolean = true) = viewModelScope.launch {
-        val trimmed = name.trim()
-        if (trimmed.isEmpty()) return@launch
+        val tidied = tidyName(name)
+        if (tidied.isEmpty()) return@launch
         val existing = categories.value.orEmpty()
         val pos = if (atEnd) (existing.maxOfOrNull { it.position } ?: -1) + 1
         else (existing.minOfOrNull { it.position } ?: 1) - 1
-        dao.insertCategory(Category(name = trimmed, position = pos))
+        dao.insertCategory(Category(name = tidied, position = pos))
     }
 
     fun renameCategory(category: Category, name: String) = viewModelScope.launch {
-        val trimmed = name.trim()
-        if (trimmed.isEmpty()) return@launch
-        dao.updateCategory(category.copy(name = trimmed))
+        val tidied = tidyName(name)
+        if (tidied.isEmpty()) return@launch
+        dao.updateCategory(category.copy(name = tidied))
     }
 
     fun deleteCategory(category: Category) = viewModelScope.launch {
