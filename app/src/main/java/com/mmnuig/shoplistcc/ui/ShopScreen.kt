@@ -122,7 +122,8 @@ private fun ShopItemCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .clickable { onToggle() },
         colors = CardDefaults.cardColors(containerColor = bg),
         border = BorderStroke(1.dp, border)
     ) {

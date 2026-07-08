@@ -25,6 +25,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -32,7 +36,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -64,7 +70,24 @@ fun PlanScreen(viewModel: ShopViewModel, onHome: () -> Unit) {
 
     val title = formatPlanDate(planDate)?.let { "Plan: $it" } ?: "Plan"
 
-    Scaffold(topBar = { GreenTopBar(title, onHome) }) { innerPadding ->
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val deleteWithUndo: (Item) -> Unit = { item ->
+        viewModel.deleteItem(item)
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = "Deleted ${item.name}",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) viewModel.restoreItem(item)
+        }
+    }
+
+    Scaffold(
+        topBar = { GreenTopBar(title, onHome) },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { innerPadding ->
         WrapAroundPager(
             pageCount = categories.size + 1,
             modifier = Modifier.padding(innerPadding)
@@ -79,7 +102,8 @@ fun PlanScreen(viewModel: ShopViewModel, onHome: () -> Unit) {
                     viewModel,
                     categories[page - 1],
                     items.filter { it.categoryId == categories[page - 1].id },
-                    number = page
+                    number = page,
+                    onDeleteItem = deleteWithUndo
                 )
             }
         }
@@ -231,7 +255,8 @@ private fun PlanCategoryPage(
     viewModel: ShopViewModel,
     category: Category,
     items: List<Item>,
-    number: Int
+    number: Int,
+    onDeleteItem: (Item) -> Unit
 ) {
     var renameTarget by remember { mutableStateOf<Item?>(null) }
 
@@ -265,7 +290,8 @@ private fun PlanCategoryPage(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                        .clickable { viewModel.setCrossed(item, !item.crossed) },
                     colors = CardDefaults.cardColors(containerColor = UnplannedBg),
                     border = BorderStroke(1.dp, UnplannedBorder)
                 ) {
@@ -283,7 +309,7 @@ private fun PlanCategoryPage(
                         IconButton(onClick = { renameTarget = item }) {
                             Icon(Icons.Filled.Edit, "Rename", tint = FlagBlue)
                         }
-                        IconButton(onClick = { viewModel.deleteItem(item) }) {
+                        IconButton(onClick = { onDeleteItem(item) }) {
                             Icon(Icons.Filled.Delete, "Delete", tint = FlagBlue)
                         }
                         IconButton(

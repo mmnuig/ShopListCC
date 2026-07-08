@@ -94,6 +94,11 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
         dao.deleteItem(item)
     }
 
+    /** Undo of a delete: re-insert with the original position and flags. */
+    fun restoreItem(item: Item) = viewModelScope.launch {
+        dao.insertItem(item.copy(id = 0))
+    }
+
     fun reorderItems(ordered: List<Item>) = viewModelScope.launch {
         dao.updateItems(ordered.mapIndexed { i, it -> it.copy(position = i) })
     }

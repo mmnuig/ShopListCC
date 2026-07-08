@@ -1,11 +1,18 @@
 package com.mmnuig.shoplistcc.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
@@ -29,6 +36,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -71,10 +79,41 @@ fun WrapAroundPager(
             virtualCount
         }
         val scope = rememberCoroutineScope()
-        HorizontalPager(state = pagerState, modifier = modifier.fillMaxSize()) { page ->
-            content(page % pageCount) { target ->
-                val base = pagerState.currentPage - pagerState.currentPage % pageCount
-                scope.launch { pagerState.animateScrollToPage(base + target) }
+        val current = pagerState.currentPage % pageCount
+        val goTo: (Int) -> Unit = { target ->
+            val base = pagerState.currentPage - pagerState.currentPage % pageCount
+            scope.launch { pagerState.animateScrollToPage(base + target.coerceIn(0, pageCount - 1)) }
+        }
+        Column(modifier.fillMaxSize()) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) { page ->
+                content(page % pageCount, goTo)
+            }
+            if (pageCount > 1) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    repeat(pageCount) { i ->
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 3.dp)
+                                .size(if (i == current) 10.dp else 8.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (i == current) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.outlineVariant
+                                )
+                                .clickable { goTo(i) }
+                        )
+                    }
+                }
             }
         }
     }
