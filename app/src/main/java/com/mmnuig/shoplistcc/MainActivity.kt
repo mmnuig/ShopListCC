@@ -22,6 +22,8 @@ import com.mmnuig.shoplistcc.ui.HomeScreen
 import com.mmnuig.shoplistcc.ui.PlanScreen
 import com.mmnuig.shoplistcc.ui.ShopScreen
 import com.mmnuig.shoplistcc.ui.theme.ShopListCCTheme
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 private const val XLSX_MIME =
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -66,7 +68,10 @@ fun ShopListApp() {
             onImport = {
                 importLauncher.launch(arrayOf(XLSX_MIME, "application/octet-stream"))
             },
-            onExport = { exportLauncher.launch("ShopList.xlsx") }
+            onExport = {
+                val today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+                exportLauncher.launch("Shop-$today.xlsx")
+            }
         )
         Screen.Plan -> PlanScreen(viewModel, onHome = { screen = Screen.Home })
         Screen.Shop -> ShopScreen(viewModel, onHome = { screen = Screen.Home })
