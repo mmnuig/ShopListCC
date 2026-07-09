@@ -26,6 +26,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -35,6 +36,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.mmnuig.shoplistcc.ShopViewModel
@@ -205,19 +208,22 @@ private fun PlanCategoriesPage(
                         )
                         CompactIconButton(Icons.Filled.Edit, "Rename") { renameTarget = category }
                         CompactIconButton(Icons.Filled.Delete, "Delete") { deleteTarget = category }
-                        IconButton(
-                            onClick = {},
-                            modifier = Modifier
-                                .size(34.dp)
-                                .draggableHandle(
-                                    onDragStopped = { viewModel.reorderCategories(localCategories) }
-                                )
+                        CompositionLocalProvider(
+                            LocalMinimumInteractiveComponentSize provides Dp.Unspecified
                         ) {
-                            Icon(
-                                Icons.Filled.DragHandle, "Reorder",
-                                tint = LocalShopColors.current.flag,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            IconButton(
+                                onClick = {},
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .draggableHandle(
+                                        onDragStopped = { viewModel.reorderCategories(localCategories) }
+                                    )
+                            ) {
+                                Icon(
+                                    Icons.Filled.DragHandle, "Reorder",
+                                    tint = LocalShopColors.current.flag
+                                )
+                            }
                         }
                     }
                 }
@@ -336,19 +342,22 @@ private fun PlanCategoryPage(
                         )
                         CompactIconButton(Icons.Filled.Edit, "Rename") { renameTarget = item }
                         CompactIconButton(Icons.Filled.Delete, "Delete") { onDeleteItem(item) }
-                        IconButton(
-                            onClick = {},
-                            modifier = Modifier
-                                .size(34.dp)
-                                .draggableHandle(
-                                    onDragStopped = { viewModel.reorderItems(localItems) }
-                                )
+                        CompositionLocalProvider(
+                            LocalMinimumInteractiveComponentSize provides Dp.Unspecified
                         ) {
-                            Icon(
-                                Icons.Filled.DragHandle, "Reorder",
-                                tint = LocalShopColors.current.flag,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            IconButton(
+                                onClick = {},
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .draggableHandle(
+                                        onDragStopped = { viewModel.reorderItems(localItems) }
+                                    )
+                            ) {
+                                Icon(
+                                    Icons.Filled.DragHandle, "Reorder",
+                                    tint = LocalShopColors.current.flag
+                                )
+                            }
                         }
                     }
                 }

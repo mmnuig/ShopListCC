@@ -20,7 +20,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -128,20 +131,25 @@ fun WrapAroundPager(
     }
 }
 
-/** Tightly-packed 34dp icon button for row actions (edit/delete/drag). */
+/**
+ * Full-size icon in a tightly-packed button for row actions (edit/delete).
+ * Material normally pads every IconButton out to a 48dp interactive minimum,
+ * which is what created the wide gaps; we lift that here.
+ */
 @Composable
 fun CompactIconButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     contentDescription: String,
     onClick: () -> Unit
 ) {
-    IconButton(onClick = onClick, modifier = Modifier.size(34.dp)) {
-        Icon(
-            icon,
-            contentDescription = contentDescription,
-            tint = com.mmnuig.shoplistcc.ui.theme.LocalShopColors.current.flag,
-            modifier = Modifier.size(20.dp)
-        )
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+        IconButton(onClick = onClick, modifier = Modifier.size(40.dp)) {
+            Icon(
+                icon,
+                contentDescription = contentDescription,
+                tint = com.mmnuig.shoplistcc.ui.theme.LocalShopColors.current.flag
+            )
+        }
     }
 }
 
