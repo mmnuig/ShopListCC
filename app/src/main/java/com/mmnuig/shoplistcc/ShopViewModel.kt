@@ -44,6 +44,15 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
         .map { it ?: "system" }
         .stateIn(viewModelScope, SharingStarted.Eagerly, "system")
 
+    /** Shop mode: hide the blue items (crossed off in Plan, not bought). */
+    val hideBlue = dao.pref("hideBlue")
+        .map { it == "1" }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun setHideBlue(hide: Boolean) = viewModelScope.launch {
+        dao.setPref(Pref("hideBlue", if (hide) "1" else "0"))
+    }
+
     fun setLargeText(large: Boolean) = viewModelScope.launch {
         dao.setPref(Pref("largeText", if (large) "1" else "0"))
     }

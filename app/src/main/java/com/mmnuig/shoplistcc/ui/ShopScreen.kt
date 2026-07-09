@@ -16,6 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -36,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -55,12 +58,21 @@ fun ShopScreen(
     val categories = viewModel.categories.collectAsState().value ?: return
     val items by viewModel.items.collectAsState()
     val planDate by viewModel.planDate.collectAsState()
+    val hideBlue by viewModel.hideBlue.collectAsState()
     var currentPage by remember { mutableStateOf(initialPage) }
 
     val title = formatPlanDate(planDate)?.let { "Shop (Planned $it)" } ?: "Shop"
 
     Scaffold(topBar = {
         GreenTopBar(title, onHome, extraActions = {
+            IconButton(onClick = { viewModel.setHideBlue(!hideBlue) }) {
+                Icon(
+                    if (hideBlue) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                    contentDescription = if (hideBlue) "Show items not on this week's list"
+                    else "Hide items not on this week's list",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+            }
             IconButton(onClick = {
                 onSwitchToPlan(if (currentPage < categories.size) currentPage else -1)
             }) {
@@ -86,6 +98,7 @@ fun ShopScreen(
                     categories[page],
                     items.filter { it.categoryId == categories[page].id },
                     number = page + 1,
+                    hideBlue = hideBlue,
                     onNext = { goTo((page + 1) % pageCount) }
                 )
             } else {
@@ -101,9 +114,13 @@ private fun ShopCategoryPage(
     category: Category,
     items: List<Item>,
     number: Int,
+    hideBlue: Boolean,
     onNext: () -> Unit
 ) {
+    // Counts always reflect the full category, even when blue items are hidden.
     val crossedOff = items.count { it.bought || it.crossed }
+    val visibleItems = if (hideBlue) items.filter { it.bought || !it.crossed } else items
+    val hiddenCount = items.size - visibleItems.size
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item(key = "header") {
             Row(
@@ -118,10 +135,18 @@ private fun ShopCategoryPage(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f)
                 )
+                if (hiddenCount > 0) {
+                    Text(
+                        "$hiddenCount hidden",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontStyle = FontStyle.Italic,
+                        modifier = Modifier.padding(end = 12.dp)
+                    )
+                }
                 Text("$crossedOff/${items.size}", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        items(items, key = { it.id }) { item ->
+        items(visibleItems, key = { it.id }) { item ->
             ShopItemCard(
                 item = item,
                 onToggle = { viewModel.shopToggle(item) },
