@@ -154,13 +154,13 @@ private fun ShopItemCard(
     onToggle: () -> Unit,
     onFlag: () -> Unit
 ) {
-    // Checked = crossed out: either excluded by Plan (dull blue) or bought
-    // (slightly darker green). Open items on this week's list are bright green.
+    // Three states: still to buy = bright green; in the trolley (bought) =
+    // dull green + strike; not needed this week = dull blue + strike.
     val checked = item.bought || item.crossed
     val shopColors = LocalShopColors.current
     val (bg, border) = when {
-        item.crossed -> shopColors.unplannedBg to shopColors.unplannedBorder
         item.bought -> shopColors.boughtBg to shopColors.boughtBorder
+        item.crossed -> shopColors.unplannedBg to shopColors.unplannedBorder
         else -> shopColors.plannedBg to shopColors.plannedBorder
     }
     Card(

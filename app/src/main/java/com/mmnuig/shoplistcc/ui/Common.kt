@@ -128,6 +128,23 @@ fun WrapAroundPager(
     }
 }
 
+/** Tightly-packed 34dp icon button for row actions (edit/delete/drag). */
+@Composable
+fun CompactIconButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit
+) {
+    IconButton(onClick = onClick, modifier = Modifier.size(34.dp)) {
+        Icon(
+            icon,
+            contentDescription = contentDescription,
+            tint = com.mmnuig.shoplistcc.ui.theme.LocalShopColors.current.flag,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
 /** "Add..." text field with a + button, used to append categories/items. */
 @Composable
 fun AddField(onAdd: (String) -> Unit, modifier: Modifier = Modifier) {

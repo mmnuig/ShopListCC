@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -202,19 +203,21 @@ private fun PlanCategoriesPage(
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f)
                         )
-                        IconButton(onClick = { renameTarget = category }) {
-                            Icon(Icons.Filled.Edit, "Rename", tint = LocalShopColors.current.flag)
-                        }
-                        IconButton(onClick = { deleteTarget = category }) {
-                            Icon(Icons.Filled.Delete, "Delete", tint = LocalShopColors.current.flag)
-                        }
+                        CompactIconButton(Icons.Filled.Edit, "Rename") { renameTarget = category }
+                        CompactIconButton(Icons.Filled.Delete, "Delete") { deleteTarget = category }
                         IconButton(
                             onClick = {},
-                            modifier = Modifier.draggableHandle(
-                                onDragStopped = { viewModel.reorderCategories(localCategories) }
-                            )
+                            modifier = Modifier
+                                .size(34.dp)
+                                .draggableHandle(
+                                    onDragStopped = { viewModel.reorderCategories(localCategories) }
+                                )
                         ) {
-                            Icon(Icons.Filled.DragHandle, "Reorder", tint = LocalShopColors.current.flag)
+                            Icon(
+                                Icons.Filled.DragHandle, "Reorder",
+                                tint = LocalShopColors.current.flag,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
                 }
@@ -331,19 +334,21 @@ private fun PlanCategoryPage(
                             color = if (item.crossed) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified,
                             modifier = Modifier.weight(1f)
                         )
-                        IconButton(onClick = { renameTarget = item }) {
-                            Icon(Icons.Filled.Edit, "Rename", tint = LocalShopColors.current.flag)
-                        }
-                        IconButton(onClick = { onDeleteItem(item) }) {
-                            Icon(Icons.Filled.Delete, "Delete", tint = LocalShopColors.current.flag)
-                        }
+                        CompactIconButton(Icons.Filled.Edit, "Rename") { renameTarget = item }
+                        CompactIconButton(Icons.Filled.Delete, "Delete") { onDeleteItem(item) }
                         IconButton(
                             onClick = {},
-                            modifier = Modifier.draggableHandle(
-                                onDragStopped = { viewModel.reorderItems(localItems) }
-                            )
+                            modifier = Modifier
+                                .size(34.dp)
+                                .draggableHandle(
+                                    onDragStopped = { viewModel.reorderItems(localItems) }
+                                )
                         ) {
-                            Icon(Icons.Filled.DragHandle, "Reorder", tint = LocalShopColors.current.flag)
+                            Icon(
+                                Icons.Filled.DragHandle, "Reorder",
+                                tint = LocalShopColors.current.flag,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
                 }
