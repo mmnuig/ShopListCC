@@ -39,6 +39,8 @@ data class ShopColors(
     val boughtBorder: Color,
     val unplannedBg: Color,
     val unplannedBorder: Color,
+    /** Checked-box colour on blue "not needed this week" cards. */
+    val blueCheck: Color,
     val flag: Color
 )
 
@@ -49,6 +51,7 @@ val LightShopColors = ShopColors(
     boughtBorder = BoughtBorder,
     unplannedBg = UnplannedBg,
     unplannedBorder = UnplannedBorder,
+    blueCheck = BlueCheck,
     flag = FlagBlue
 )
 
@@ -59,6 +62,7 @@ val DarkShopColors = ShopColors(
     boughtBorder = BoughtBorderDark,
     unplannedBg = UnplannedBgDark,
     unplannedBorder = UnplannedBorderDark,
+    blueCheck = BlueCheckDark,
     flag = FlagBlueDark
 )
 

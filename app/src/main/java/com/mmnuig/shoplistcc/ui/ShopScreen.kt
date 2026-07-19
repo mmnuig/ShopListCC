@@ -23,12 +23,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,7 +63,10 @@ fun ShopScreen(
     val hideBlue by viewModel.hideBlue.collectAsState()
     var currentPage by remember { mutableStateOf(initialPage) }
 
-    val title = formatPlanDate(planDate)?.let { "Shop (Planned $it)" } ?: "Shop"
+    // A plan newer than the last shop means a fresh shop: reset bought marks.
+    LaunchedEffect(Unit) { viewModel.startShopIfNewPlan() }
+
+    val title = formatPlanDate(planDate)?.let { "SHOP (Plan: $it)" } ?: "SHOP"
 
     Scaffold(topBar = {
         GreenTopBar(title, onHome, extraActions = {
@@ -197,7 +202,16 @@ private fun ShopItemCard(
         border = BorderStroke(1.dp, border)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = checked, onCheckedChange = { onToggle() })
+            // Tick colour matches the card: green tick = in the trolley, blue
+            // tick = not needed this week. No green ticks on blue cards.
+            Checkbox(
+                checked = checked,
+                onCheckedChange = { onToggle() },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = if (item.bought) shopColors.boughtBorder
+                    else shopColors.blueCheck
+                )
+            )
             Text(
                 item.name,
                 textDecoration = if (checked) TextDecoration.LineThrough else null,

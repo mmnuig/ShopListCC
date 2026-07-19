@@ -64,8 +64,15 @@ interface ShopDao {
     @Query("UPDATE items SET crossed = 1 WHERE bought = 1")
     suspend fun syncCrossedWithBought()
 
+    /** Start of a new shop: nothing is in the trolley yet. Crossed stays. */
+    @Query("UPDATE items SET bought = 0")
+    suspend fun clearAllBought()
+
     @Query("SELECT value FROM prefs WHERE `key` = :key")
     fun pref(key: String): Flow<String?>
+
+    @Query("SELECT value FROM prefs WHERE `key` = :key")
+    suspend fun prefValue(key: String): String?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun setPref(pref: Pref)

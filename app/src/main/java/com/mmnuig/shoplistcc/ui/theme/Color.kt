@@ -16,6 +16,7 @@ val BoughtBorder = Color(0xFF4CAF50)
 val UnplannedBg = Color(0xFFE3F0FA)    // dull blue: not on this week's list
 val UnplannedBorder = Color(0xFF90CAF9)
 val FlagBlue = Color(0xFF2196F3)
+val BlueCheck = Color(0xFF1976D2)      // checked box on a blue card
 
 // Shop item states - dark theme
 val PlannedBgDark = Color(0xFF1E4620)
@@ -25,3 +26,4 @@ val BoughtBorderDark = Color(0xFF388E3C)
 val UnplannedBgDark = Color(0xFF1C2B3A)
 val UnplannedBorderDark = Color(0xFF4A7BA6)
 val FlagBlueDark = Color(0xFF64B5F6)
+val BlueCheckDark = Color(0xFF64B5F6)

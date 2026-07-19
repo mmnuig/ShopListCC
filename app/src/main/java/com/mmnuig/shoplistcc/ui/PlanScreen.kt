@@ -24,6 +24,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
@@ -199,7 +200,10 @@ private fun PlanCategoriesPage(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
                             checked = allCrossed,
-                            onCheckedChange = { viewModel.setCategoryCrossed(category.id, it) }
+                            onCheckedChange = { viewModel.setCategoryCrossed(category.id, it) },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = LocalShopColors.current.blueCheck
+                            )
                         )
                         Text(
                             "${index + 1} ${category.name}",
@@ -269,7 +273,7 @@ private fun ClearAllDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Start a new plan") },
-        text = { Text("This stamps today's date on the plan. Bought ticks and flags are kept.") },
+        text = { Text("This stamps today's date on the plan. Flags are kept; bought ticks reset when you next open Shop.") },
         confirmButton = {
             Column {
                 TextButton(onClick = { onCrossAll(); onDismiss() }) {
@@ -312,7 +316,10 @@ private fun PlanCategoryPage(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
                         checked = allCrossed,
-                        onCheckedChange = { viewModel.setCategoryCrossed(category.id, it) }
+                        onCheckedChange = { viewModel.setCategoryCrossed(category.id, it) },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = LocalShopColors.current.blueCheck
+                        )
                     )
                     Text("$number ${category.name}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -330,9 +337,14 @@ private fun PlanCategoryPage(
                     border = BorderStroke(1.dp, LocalShopColors.current.unplannedBorder)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Crossed = not needed this week = the blue state, so
+                        // the tick is blue like the card, never green-on-blue.
                         Checkbox(
                             checked = item.crossed,
-                            onCheckedChange = { viewModel.setCrossed(item, it) }
+                            onCheckedChange = { viewModel.setCrossed(item, it) },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = LocalShopColors.current.blueCheck
+                            )
                         )
                         Text(
                             item.name,

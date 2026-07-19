@@ -107,6 +107,12 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
     fun setCategoryCrossed(categoryId: Long, crossed: Boolean) = viewModelScope.launch {
         if (crossed) dao.setCategoryCrossed(categoryId, true)
         else dao.uncrossCategory(categoryId)
+        stampPlanDate()
+    }
+
+    /** Any select/deselect in Plan mode counts as planning done today. */
+    private suspend fun stampPlanDate() {
+        dao.setPref(Pref("planDate", LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)))
     }
 
     // --- Items ---
@@ -155,6 +161,7 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
             if (crossed) item.copy(crossed = true)
             else item.copy(crossed = false, bought = false)
         )
+        stampPlanDate()
     }
 
     fun setBought(item: Item, bought: Boolean) = viewModelScope.launch {
@@ -182,7 +189,24 @@ class ShopViewModel(app: Application) : AndroidViewModel(app) {
     /** Clear All in Plan: cross or uncross every item, and stamp a new plan date. */
     fun setAllCrossed(crossed: Boolean) = viewModelScope.launch {
         if (crossed) dao.setAllCrossed(true) else dao.uncrossAll()
-        dao.setPref(Pref("planDate", LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)))
+        stampPlanDate()
+    }
+
+    /**
+     * Called when Shop mode opens. If the plan changed on a later day than the
+     * last shop, this is a fresh shop: nothing is in the trolley yet, so all
+     * bought marks are cleared (items crossed off in Plan stay crossed and show
+     * blue), and today becomes the shop date. Because the comparison is by day,
+     * hopping into Plan mid-shop to tweak something never wipes trolley
+     * progress from the same day.
+     */
+    fun startShopIfNewPlan() = viewModelScope.launch {
+        val planned = dao.prefValue("planDate") ?: return@launch
+        val shopped = dao.prefValue("shopDate")
+        if (shopped == null || planned > shopped) {
+            dao.clearAllBought()
+            dao.setPref(Pref("shopDate", LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)))
+        }
     }
 
     // --- Import/Export ---
